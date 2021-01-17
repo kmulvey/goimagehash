@@ -8,9 +8,10 @@ import (
 	"errors"
 	"image"
 
-	"github.com/corona10/goimagehash/etcs"
-	"github.com/corona10/goimagehash/transforms"
+	"github.com/kmulvey/goimagehash/etcs"
+	"github.com/kmulvey/goimagehash/transforms"
 	"github.com/nfnt/resize"
+	"golang.org/x/image/draw"
 )
 
 // AverageHash fuction returns a hash computation of average hash.
@@ -69,9 +70,17 @@ func PerceptionHash(img image.Image) (*ImageHash, error) {
 		return nil, errors.New("Image object can not be nil")
 	}
 
-	phash := NewImageHash(0, PHash)
-	resized := resize.Resize(64, 64, img, resize.Bilinear)
-	pixels := transforms.Rgb2Gray(resized)
+	phash := NewImageHash(0, 2)
+
+	// resize
+	sr := img.Bounds()
+	dr := image.Rect(0, 0, 64, 64)
+	dst := image.NewRGBA(dr)
+	draw.NearestNeighbor.Scale(dst, dr, img, sr, draw.Src, nil)
+
+	// gray
+	pixels := transforms.Rgb2Gray(dst)
+
 	dct := transforms.DCT2D(pixels, 64, 64)
 	flattens := transforms.FlattenPixels(dct, 8, 8)
 	median := etcs.MedianOfPixels(flattens)
